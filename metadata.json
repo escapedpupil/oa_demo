@@ -1,6 +1,6 @@
 {
   "name": "企业协同OA办公系统",
-  "description": "轻量简洁的企业协同办公系统，包含用户认证、员工打卡考勤与统计管理、多类型流程审批流转、内部即时通讯与组织通讯录，支持本地数据持久化。",
+  "description": "轻量简洁的企业协同办公系统，包含用户认证、员工考勤与打卡统计、可视化自定义流程与流转引擎、常规审批流转、内部即时通讯与组织通讯录，所有数据存储于手机本地。",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

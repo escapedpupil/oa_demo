@@ -67,10 +67,12 @@ export const Header: React.FC<HeaderProps> = ({
     switch (tab) {
       case 'dashboard':
         return '协同办公工作台';
+      case 'workflow':
+        return '自定义流程与工作流引擎';
       case 'attendance':
         return '员工考勤管理';
       case 'approval':
-        return '审批流程中心';
+        return '常规审批中心';
       case 'message':
         return '内部通讯与通讯录';
       case 'settings':

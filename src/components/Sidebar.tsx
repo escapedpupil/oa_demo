@@ -9,6 +9,7 @@ import {
   X,
   Smartphone,
   ShieldCheck,
+  GitFork,
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -39,17 +40,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: LayoutDashboard,
     },
     {
+      id: 'workflow',
+      label: '流程中心',
+      sub: '自定义流程与引擎',
+      icon: GitFork,
+    },
+    {
+      id: 'approval',
+      label: '常规审批',
+      sub: '请假报销与出差',
+      icon: FileCheck2,
+      badge: pendingApprovalsCount,
+    },
+    {
       id: 'attendance',
       label: '员工考勤',
       sub: '日常打卡与统计管理',
       icon: CalendarCheck,
-    },
-    {
-      id: 'approval',
-      label: '审批中心',
-      sub: '发起申请与流程流转',
-      icon: FileCheck2,
-      badge: pendingApprovalsCount,
     },
     {
       id: 'message',

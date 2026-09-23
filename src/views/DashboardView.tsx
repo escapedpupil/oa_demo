@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, AttendanceRecord, ApprovalItem } from '../types';
+import { User, AttendanceRecord, ApprovalItem, WorkflowInstance } from '../types';
 import { db } from '../services/db';
 import {
   CalendarCheck,
@@ -17,6 +17,7 @@ import {
   Package,
   AlertTriangle,
   Building,
+  GitFork,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -35,18 +36,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
+  const [workflowInstances, setWorkflowInstances] = useState<WorkflowInstance[]>([]);
   const [currentTime, setCurrentTime] = useState('');
   const [loadingPunch, setLoadingPunch] = useState(false);
 
   const loadData = async () => {
-    const [rec, atts, apps] = await Promise.all([
+    const [rec, atts, apps, wfs] = await Promise.all([
       db.getTodayRecordForUser(currentUser.id),
       db.getAttendanceRecords(),
       db.getApprovals(),
+      db.getWorkflowInstances(),
     ]);
     setTodayRecord(rec);
     setAllAttendance(atts);
     setApprovals(apps);
+    setWorkflowInstances(wfs);
   };
 
   useEffect(() => {
@@ -107,13 +111,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   // Filter tasks pending my approval
-  const pendingForMe = approvals.filter((a) => {
+  const pendingRegular = approvals.filter((a) => {
     if (a.status !== 'pending') return false;
     const step = a.steps[a.currentStepIndex];
     if (!step) return false;
     // If admin or matching approver
     return step.approverId === currentUser.id || currentUser.role === 'admin';
   });
+
+  const pendingWorkflow = workflowInstances.filter((w) => {
+    if (w.status !== 'pending') return false;
+    const step = w.steps[w.currentStepIndex];
+    if (!step) return false;
+    return step.approverId === currentUser.id || currentUser.role === 'admin';
+  });
+
+  const pendingForMe = pendingRegular;
+  const totalPendingCount = pendingRegular.length + pendingWorkflow.length;
 
   const myInitiated = approvals.filter((a) => a.applicantId === currentUser.id);
 
@@ -139,7 +153,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               早安，{currentUser.name}！
             </h2>
             <p className="text-xs text-blue-100/90 max-w-xl">
-              今天是高效协作的一天。您有 <span className="font-semibold text-white underline">{pendingForMe.length} 项</span> 待办审批需要处理，系统运行良好。
+              今天是高效协作的一天。您有 <span className="font-semibold text-white underline">{totalPendingCount} 项</span> 待办审批流程需要处理，系统运行良好。
             </p>
           </div>
 
@@ -208,8 +222,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-zinc-900">{pendingForMe.length}</span>
-            <span className="text-[11px] text-zinc-400">项单据待处理</span>
+            <span className="text-2xl font-bold tracking-tight text-zinc-900">{totalPendingCount}</span>
+            <span className="text-[11px] text-zinc-400">
+              项待处理 {pendingWorkflow.length > 0 && `(含${pendingWorkflow.length}项流程)`}
+            </span>
           </div>
           <p className="mt-1 text-[11px] text-blue-600 flex items-center gap-1 group-hover:underline">
             <span>点击立即处理</span>
@@ -281,10 +297,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Quick Action Shortcuts */}
       <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-2xs">
-        <h3 className="text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-3">
-          快捷办公入口
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">
+            快捷办公入口
+          </h3>
+          <button
+            onClick={() => onNavigateTab('workflow')}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+          >
+            <span>进入流程中心</span>
+            <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          <button
+            onClick={() => onNavigateTab('workflow')}
+            className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 transition-colors group"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white mb-2 group-hover:scale-110 transition-transform shadow-xs">
+              <GitFork className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-semibold text-zinc-900">自定义流程</span>
+            <span className="text-[10px] text-blue-600 font-medium mt-0.5">流程引擎/设计</span>
+          </button>
+
           <button
             onClick={() => onNavigateTab('approval', { preselectType: 'leave' })}
             className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-zinc-100 bg-zinc-50 hover:bg-blue-50/60 hover:border-blue-200 transition-colors group"
@@ -348,19 +384,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="lg:col-span-2 rounded-xl border border-zinc-200 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-zinc-900">待办审批流程</h3>
+              <h3 className="text-sm font-bold text-zinc-900">待办审批与流转</h3>
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                {pendingForMe.length} 条待处理
+                {totalPendingCount} 条待处理
               </span>
             </div>
-            <button
-              onClick={() => onNavigateTab('approval')}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>查看全部审批</span>
-              <ArrowRight className="h-3 w-3" />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onNavigateTab('workflow')}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+              >
+                <span>自定义流程 ({pendingWorkflow.length})</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+              <button
+                onClick={() => onNavigateTab('approval')}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <span>常规单据 ({pendingForMe.length})</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
           </div>
+
+          {/* Workflow pending callout */}
+          {pendingWorkflow.length > 0 && (
+            <div
+              onClick={() => onNavigateTab('workflow')}
+              className="mb-3 flex items-center justify-between rounded-xl bg-purple-50 p-3 border border-purple-200 cursor-pointer hover:bg-purple-100/70 transition"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white">
+                  <GitFork className="h-4 w-4" />
+                </div>
+                <div className="text-xs">
+                  <span className="font-bold text-purple-950">
+                    有 {pendingWorkflow.length} 项自定义业务流程正等待您审核流转
+                  </span>
+                  <span className="text-purple-700 block text-[11px]">
+                    包括：{pendingWorkflow.map((w) => w.workflowName).slice(0, 2).join('、')}
+                    {pendingWorkflow.length > 2 && ' 等'}
+                  </span>
+                </div>
+              </div>
+              <span className="rounded-lg bg-purple-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xs">
+                立即处理
+              </span>
+            </div>
+          )}
 
           {pendingForMe.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center text-zinc-400">

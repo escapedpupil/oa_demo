@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Calendar,
   Building,
+  GitFork,
 } from 'lucide-react';
 
 interface ApprovalViewProps {
@@ -30,6 +31,7 @@ interface ApprovalViewProps {
   preselectedItem?: ApprovalItem | null;
   onCloseDetail?: () => void;
   preselectedType?: ApprovalType | null;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const ApprovalView: React.FC<ApprovalViewProps> = ({
@@ -38,6 +40,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
   preselectedItem = null,
   onCloseDetail,
   preselectedType = null,
+  onNavigateTab,
 }) => {
   const [activeTab, setActiveTab] = useState<'list' | 'create'>('list');
   const [listFilter, setListFilter] = useState<'pending' | 'my' | 'processed' | 'all'>('pending');
@@ -377,9 +380,20 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
             }`}
           >
             <Plus className="h-4 w-4" />
-            <span>发起新审批</span>
+            <span>发起常规审批</span>
           </button>
         </div>
+
+        {onNavigateTab && (
+          <button
+            onClick={() => onNavigateTab('workflow')}
+            className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-xs"
+          >
+            <GitFork className="h-3.5 w-3.5 text-purple-600" />
+            <span>进入自定义流程与流转引擎</span>
+            <ArrowRight className="h-3.5 w-3.5 text-purple-400" />
+          </button>
+        )}
       </div>
 
       {/* TAB 1: APPROVAL LIST */}

@@ -126,3 +126,115 @@ export interface Department {
   employeeCount: number;
   description: string;
 }
+
+export type CustomFormFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'datetime'
+  | 'select'
+  | 'radio'
+  | 'checkbox'
+  | 'user'
+  | 'department';
+
+export interface CustomFormField {
+  id: string;
+  name: string;
+  label: string;
+  type: CustomFormFieldType;
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+  unit?: string;
+  defaultValue?: any;
+  description?: string;
+}
+
+export type WorkflowApproverType =
+  | 'dept_manager'
+  | 'specific_user'
+  | 'role'
+  | 'applicant_select';
+
+export interface WorkflowCondition {
+  fieldId: string;
+  operator: '>' | '>=' | '<' | '<=' | '==' | '!=';
+  value: any;
+}
+
+export interface WorkflowStepConfig {
+  id: string;
+  name: string;
+  approverType: WorkflowApproverType;
+  approverId?: string;
+  approverName?: string;
+  targetRole?: UserRole;
+  approvalMode: 'and' | 'or'; // 'and' = 会签, 'or' = 或签
+  condition?: WorkflowCondition;
+}
+
+export type WorkflowCategory =
+  | 'finance'
+  | 'admin'
+  | 'hr'
+  | 'it'
+  | 'business'
+  | 'general';
+
+export interface WorkflowDefinition {
+  id: string;
+  name: string;
+  code: string;
+  category: WorkflowCategory;
+  icon: string;
+  color: string;
+  description: string;
+  fields: CustomFormField[];
+  steps: WorkflowStepConfig[];
+  notifyUserIds?: string[];
+  status: 'published' | 'draft' | 'disabled';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  isPreset?: boolean;
+}
+
+export interface WorkflowInstanceStep {
+  id: string;
+  name: string;
+  approverId: string;
+  approverName: string;
+  approverAvatar?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'skipped';
+  comment?: string;
+  actionTime?: string;
+}
+
+export interface WorkflowInstanceHistory {
+  id: string;
+  operatorName: string;
+  action: string;
+  comment?: string;
+  timestamp: string;
+}
+
+export interface WorkflowInstance {
+  id: string;
+  workflowId: string;
+  workflowName: string;
+  workflowCategory: WorkflowCategory;
+  applicantId: string;
+  applicantName: string;
+  applicantDepartment: string;
+  applicantAvatar: string;
+  formData: Record<string, any>;
+  status: 'pending' | 'approved' | 'rejected' | 'revoked';
+  currentStepIndex: number;
+  steps: WorkflowInstanceStep[];
+  ccUserNames?: string[];
+  createdAt: string;
+  completedAt?: string;
+  history: WorkflowInstanceHistory[];
+}

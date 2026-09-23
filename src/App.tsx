@@ -13,6 +13,7 @@ import { ToastContainer, ToastMessage } from './components/Toast';
 import { DashboardView } from './views/DashboardView';
 import { AttendanceView } from './views/AttendanceView';
 import { ApprovalView } from './views/ApprovalView';
+import { WorkflowView } from './views/WorkflowView';
 import { MessageView } from './views/MessageView';
 import { SettingsView } from './views/SettingsView';
 
@@ -51,18 +52,26 @@ export default function App() {
       setCurrentUser(user);
 
       if (user) {
-        const [apps, chans] = await Promise.all([
+        const [apps, chans, wfInsts] = await Promise.all([
           db.getApprovals(),
           db.getChannels(user.id),
+          db.getWorkflowInstances(),
         ]);
 
         // Pending approvals for this user
-        const pending = apps.filter((a) => {
+        const pendingRegular = apps.filter((a) => {
           if (a.status !== 'pending') return false;
           const step = a.steps[a.currentStepIndex];
           return step?.approverId === user.id || user.role === 'admin';
         }).length;
-        setPendingApprovalsCount(pending);
+
+        const pendingWf = wfInsts.filter((w) => {
+          if (w.status !== 'pending') return false;
+          const step = w.steps[w.currentStepIndex];
+          return step?.approverId === user.id || user.role === 'admin';
+        }).length;
+
+        setPendingApprovalsCount(pendingRegular + pendingWf);
 
         // Unread messages
         const unread = chans.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
@@ -181,6 +190,14 @@ export default function App() {
                   />
                 )}
 
+                {activeTab === 'workflow' && (
+                  <WorkflowView
+                    currentUser={currentUser}
+                    onShowToast={addToast}
+                    onNavigateTab={handleNavigateTab}
+                  />
+                )}
+
                 {activeTab === 'attendance' && (
                   <AttendanceView
                     currentUser={currentUser}
@@ -196,6 +213,7 @@ export default function App() {
                     preselectedItem={selectedApprovalForModal}
                     onCloseDetail={() => setSelectedApprovalForModal(null)}
                     preselectedType={preselectedApprovalType}
+                    onNavigateTab={handleNavigateTab}
                   />
                 )}
 
