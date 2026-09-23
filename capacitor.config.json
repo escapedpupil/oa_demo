@@ -1,0 +1,8 @@
+{
+  "appId": "com.enterprise.oa",
+  "appName": "企业协同OA",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
